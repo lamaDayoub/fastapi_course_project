@@ -31,3 +31,15 @@ def create (request : schemas.Blog, db : Session = Depends(get_db)):
     db.commit()
     db.refresh(new_blog)
     return new_blog
+
+
+@app.get('/blog') #db : Session = Depends(get_db)  is a database instance
+def get_all(db : Session = Depends(get_db)):
+    #we are querying on blog from models 
+    blogs = db.query(models.Blog).all()
+    return blogs
+
+@app.get('/blog/{id}')
+def get_one(id, db : Session = Depends(get_db)):
+    blog = db.query(models.Blog).filter(models.Blog.id == id).first()
+    return blog
