@@ -1,4 +1,4 @@
-from fastapi import FastAPI,Depends
+from fastapi import FastAPI,Depends,status, Response, HTTPException
 from . import schemas, models
 from .database import engine,SessionLocal
 from sqlalchemy.orm import Session 
@@ -23,7 +23,7 @@ models.Base.metadata.create_all(engine)
 
 #The Logic: This is a core FastAPI concept. that is saying: "Before you run this function, I #need you to go run get_db and give me a database session."
 #It ensures that every request gets its own database connection and, most importantly, closes #it when the request is finished.
-@app.post('/blog')
+@app.post('/blog', status_code=status.HTTP_201_CREATED)
 def create (request : schemas.Blog, db : Session = Depends(get_db)):
     # db: Session: This is your "link" to the database. You will use this variable to perform #your CRUD operations (like db.add() or db.query()).
     new_blog = models.Blog(title = request.title , body = request .body)
@@ -40,6 +40,10 @@ def get_all(db : Session = Depends(get_db)):
     return blogs
 
 @app.get('/blog/{id}')
-def get_one(id, db : Session = Depends(get_db)):
+def get_one(id, response : Response, db : Session = Depends(get_db)):
     blog = db.query(models.Blog).filter(models.Blog.id == id).first()
+    if not blog:
+        raise HTTPException(status_code = status.HTTP_404_NOT_FOUND,detail = f'the blog with id {id} is not available')
+        # response.status_code  = status.HTTP_404_NOT_FOUND
+        # return {'detail':f'the blog with id {id} is not available'}
     return blog
