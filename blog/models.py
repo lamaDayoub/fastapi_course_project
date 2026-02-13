@@ -2,7 +2,7 @@ from sqlalchemy import Column, Integer, String
 
 from .database import Base
 
-
+#This defines the actual database tables (the "physical" structure).
 class Blog(Base) :
     __tablename__ = 'blogs'
     id = Column(Integer, primary_key =True, index=True)
