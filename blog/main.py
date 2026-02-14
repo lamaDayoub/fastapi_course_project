@@ -25,17 +25,18 @@ models.Base.metadata.create_all(engine)
 
 #The Logic: This is a core FastAPI concept. that is saying: "Before you run this function, I #need you to go run get_db and give me a database session."
 #It ensures that every request gets its own database connection and, most importantly, closes #it when the request is finished.
-@app.post('/blog', status_code=status.HTTP_201_CREATED)
+@app.post('/blog', status_code=status.HTTP_201_CREATED, tags=["blogs"])
 def create_blog (request : schemas.Blog, db : Session = Depends(get_db)):
     # db: Session: This is your "link" to the database. You will use this variable to perform #your CRUD operations (like db.add() or db.query()).
     blog_data=request.model_dump()
+    blog_data['user_id']=1
     new_blog = models.Blog(**blog_data)
     db.add(new_blog)
     db.commit()
     db.refresh(new_blog)
     return new_blog
 
-@app.delete('/blog/{id}',status_code=status.HTTP_204_NO_CONTENT)
+@app.delete('/blog/{id}',status_code=status.HTTP_204_NO_CONTENT, tags=["blogs"])
 def delete_blog(id, db: Session = Depends(get_db)):
     blog =db.query(models.Blog).filter(models.Blog.id == id)
     if not blog.first():
@@ -46,7 +47,7 @@ def delete_blog(id, db: Session = Depends(get_db)):
     db.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
-@app.put('/blog/{id}',status_code=status.HTTP_202_ACCEPTED)
+@app.put('/blog/{id}',status_code=status.HTTP_202_ACCEPTED, tags=["blogs"])
 def update_blog(id, request: schemas.Blog, db: Session = Depends(get_db)):
     blog =  db.query(models.Blog).filter(models.Blog.id == id)
     if not blog.first():
@@ -58,13 +59,13 @@ def update_blog(id, request: schemas.Blog, db: Session = Depends(get_db)):
     return 'updated'
 
 
-@app.get('/blog',response_model=List[schemas.showBlog]) #db : Session = Depends(get_db)  is a database instance
+@app.get('/blog',response_model=List[schemas.showBlog], tags=["blogs"]) #db : Session = Depends(get_db)  is a database instance
 def get_all(db : Session = Depends(get_db)):
     #we are querying on blog from models 
     blogs = db.query(models.Blog).all()
     return blogs
 
-@app.get('/blog/{id}', status_code=status.HTTP_200_OK, response_model = schemas.showBlog)
+@app.get('/blog/{id}', status_code=status.HTTP_200_OK, response_model = schemas.showBlog, tags=["blogs"])
 def get_one(id:int, response : Response, db : Session = Depends(get_db) ):
     blog = db.query(models.Blog).filter(models.Blog.id == id).first()
     if not blog:
@@ -73,7 +74,7 @@ def get_one(id:int, response : Response, db : Session = Depends(get_db) ):
         # return {'detail':f'the blog with id {id} is not available'}
     return blog
 
-@app.post('/user',status_code=status.HTTP_201_CREATED,response_model=schemas.ShowUser)
+@app.post('/user',status_code=status.HTTP_201_CREATED,response_model=schemas.ShowUser, tags=["users"])
 def create_user(request : schemas.User ,  db : Session = Depends(get_db)  ):
     hashed_password = hashing.Hash.bcrypt(request.password)
     new_user = models.User(name= request.name , email = request.email, password=hashed_password)
@@ -82,7 +83,7 @@ def create_user(request : schemas.User ,  db : Session = Depends(get_db)  ):
     db.refresh(new_user)
     return new_user
 
-@app.get('/user/{id}',response_model=schemas.ShowUser, status_code=status.HTTP_200_OK)
+@app.get('/user/{id}',response_model=schemas.ShowUser, status_code=status.HTTP_200_OK, tags=["users"])
 def show_user(id:int, db:Session= Depends(get_db)):
     user = db.query(models.User).filter(models.User.id==id).first()
     if not user:
