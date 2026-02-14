@@ -1,9 +1,9 @@
 from fastapi import FastAPI,Depends,status, Response, HTTPException
-from . import schemas, models
+from . import schemas, models, hashing
 from .database import engine,SessionLocal
 from sqlalchemy.orm import Session 
 from typing import List
-from passlib.context import CryptContext
+
 
 app = FastAPI()
 def get_db():
@@ -22,7 +22,6 @@ def get_db():
 #like migrate in django it tells to make all tables from models.py if they are not created #befor in the database
 models.Base.metadata.create_all(engine)
 
-pwd_cxt = CryptContext(schemes=['bcrypt'],deprecated='auto')
 
 #The Logic: This is a core FastAPI concept. that is saying: "Before you run this function, I #need you to go run get_db and give me a database session."
 #It ensures that every request gets its own database connection and, most importantly, closes #it when the request is finished.
@@ -66,7 +65,7 @@ def get_all(db : Session = Depends(get_db)):
     return blogs
 
 @app.get('/blog/{id}', status_code=status.HTTP_200_OK, response_model = schemas.showBlog)
-def get_one(id, response : Response, db : Session = Depends(get_db) ):
+def get_one(id:int, response : Response, db : Session = Depends(get_db) ):
     blog = db.query(models.Blog).filter(models.Blog.id == id).first()
     if not blog:
         raise HTTPException(status_code = status.HTTP_404_NOT_FOUND,detail = f'the blog with id {id} is not available')
@@ -74,11 +73,18 @@ def get_one(id, response : Response, db : Session = Depends(get_db) ):
         # return {'detail':f'the blog with id {id} is not available'}
     return blog
 
-@app.post('/user',status_code=status.HTTP_201_CREATED)
+@app.post('/user',status_code=status.HTTP_201_CREATED,response_model=schemas.ShowUser)
 def create_user(request : schemas.User ,  db : Session = Depends(get_db)  ):
-    hashed_password = pwd_cxt.hash(request.password)
+    hashed_password = hashing.Hash.bcrypt(request.password)
     new_user = models.User(name= request.name , email = request.email, password=hashed_password)
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
     return new_user
+
+@app.get('/user/{id}',response_model=schemas.ShowUser, status_code=status.HTTP_200_OK)
+def show_user(id:int, db:Session= Depends(get_db)):
+    user = db.query(models.User).filter(models.User.id==id).first()
+    if not user:
+        raise HTTPException(status_code = status.HTTP_404_NOT_FOUND,detail = f'the user with id {id} is not available')
+    return user

@@ -17,4 +17,10 @@ class User(BaseModel):
     password:str
     class Config():
         from_attributes = True
+        
+class ShowUser(BaseModel):
+    name:str
+    email:str
+    class Config():
+        from_attributes = True
     
