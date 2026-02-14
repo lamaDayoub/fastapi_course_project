@@ -9,3 +9,14 @@ engine = create_engine( SQLALCHEMY_DATABASE_URL, connect_args ={"check_same_thre
 SessionLocal = sessionmaker(bind = engine , autocommit= False , autoflush = False)
 #declarative_base: This is the "Parent" for the models. In Django, we use models.Model; here, #we  use Base.
 Base = declarative_base()
+
+def get_db():
+    #Before yield: FastAPI runs this part before your route starts (creates the session).
+    #This creates a new, private session for a single request
+    db = SessionLocal()
+    try:
+        yield db
+    #even if the code crashes—always execute the code in finally
+    finally:
+        # Once your route has finished sending the response to the user, FastAPI "wakes up" #this function and runs the code after the yield (closing the session).
+        db.close()
