@@ -3,10 +3,20 @@ from datetime import datetime, timedelta, timezone
 from jose import JWTError, jwt
 from typing import Optional
 from . import schemas
+import os
+from pathlib import Path
+from dotenv import load_dotenv
+base_dir = Path(__file__).resolve().parent
+env_path = base_dir / ".env"
 
-SECRET_KEY = "09d25e094faa6ca2556c818166b7a9563b93f7099f6f0f4caa6cf63b88e8d3e7"
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
+load_dotenv(dotenv_path=env_path)
+
+
+SECRET_KEY = os.getenv("SECRET_KEY")
+ALGORITHM = os.getenv("ALGORITHM")
+ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES"))
+
+
 
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
